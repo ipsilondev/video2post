@@ -10,12 +10,12 @@
  * @wordpress-plugin
  * Plugin Name: Video2Post
  * Plugin URI:  https://video2post.com/wordpress
- * Description: Import Video2Post project into a wordpress blog
+ * Description: Import Video2Post project into a wordpress post
  * Version:     1.0.0
  * Author:      Ipsilon Developments Inc.
  * Author URI:  https://ipsilondev.com
  * Text Domain: video2post
- * License:     MIT License
+ * License:     GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  */
 
