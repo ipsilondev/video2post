@@ -1,6 +1,6 @@
 <?php
 /**
- * Hello World
+ * Video2Post
  *
  * @package     Video2Post
  * @author      Ipsilon Developments Inc.
