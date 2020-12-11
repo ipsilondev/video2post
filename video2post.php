@@ -18,20 +18,21 @@
  * License:     GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  */
-
-function cleanupFiles () {
+class video2post_AdminManager {
+public static function video2post_cleanupFiles () {
   $filesInDir = array_diff(scandir(WP_PLUGIN_DIR . "/video2post/files/"), array('.', '..'));
           foreach($filesInDir as $val) {
                 unlink(WP_PLUGIN_DIR . "/video2post/files/" . $val);
                 }
 }
-function display_admin_page() {
-	global $_GET, $_POST;
+public static function video2post_display_admin_page() {
+	global $_GET, $_POST, $wp_filesystem;
+	WP_Filesystem();
 	if($_POST[process] == 1 && $_SESSION[v2p_status] == 0 && $_POST[url] != '') {
 		if (substr($_POST[url], 0, strlen('https://video2post.com')) == 'https://video2post.com' || substr($_POST[url], 0, strlen('https://www.video2post.com')) == 'https://www.video2post.com') {
 		$_SESSION[v2p_status] = 1;
-		$_SESSION[v2p_url] = $_POST[url];
-                cleanupFiles();
+		$_SESSION[v2p_url] = esc_url_raw($_POST[url]);
+                self::video2post_cleanupFiles();
 		} else {
 		$_SESSION[v2p_error] = 1;	
 		}
@@ -40,7 +41,7 @@ function display_admin_page() {
 	  $_SESSION[v2p_status] = 0;
           $_SESSION[v2p_url] =  '';
           $_SESSION[v2p_error] = 0;
-	  cleanupFiles();
+		  self::video2post_cleanupFiles();
 		echo "<script>window.location.href = '/wp-admin/admin.php?page=video2post&time=".time()."';</script>";
 		exit();
 	}
@@ -49,20 +50,13 @@ function display_admin_page() {
 		echo "<h3>IMPORTING PROJECT. DO NOT CLOSE THE BROWSER.</h3>";
 		echo "<h3>Downloading file</h3>";
 		if($_SESSION[v2p_status] == 1) {
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $_SESSION[v2p_url]);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-			$data = curl_exec ($ch);
-			$error = curl_error($ch); 
-			curl_close ($ch);
+			$data = wp_remote_get($_SESSION[v2p_url])['body'];
 			if($error !='' || strrpos($data, 'failed request') != false) {
 			$_SESSION[v2p_error] = 1;
                         $_SESSION[v2p_status] = 0; 
 			} else {			
 			$destination = WP_PLUGIN_DIR . "/video2post/files/zip.zip";
-			$file = fopen($destination, "w+");			
-			fwrite($file, $data);
-			fclose($file);
+			$wp_filesystem->put_contents($destination, $data);
 			$_SESSION[v2p_status] = 2;
 			}
 			echo "<script>setTimeout(() => { window.location.href = '/wp-admin/admin.php?page=video2post&time=".time()."'; }, 3000);</script>";
@@ -136,16 +130,16 @@ function display_admin_page() {
 		
 	}
 }
-function video2post_admin_menu() {
+public static function video2post_admin_menu() {
   add_menu_page(
         'Video2Post',// page title
         'Video2Post',// menu title
         'manage_options',// capability
         'video2post',// menu slug
-        'display_admin_page' // callback function
+        'video2post_AdminManager::video2post_display_admin_page' // callback function
     );
 }
-function register_session () {
+public static function register_session () {
 	if (!session_id()) {
         session_start();
 	}
@@ -153,5 +147,6 @@ function register_session () {
 		$_SESSION[v2p_status] = 0;
 	}
 }
-add_action('admin_menu', 'video2post_admin_menu');
-add_action('init', 'register_session', 1);
+}
+add_action('admin_menu', 'video2post_AdminManager::video2post_admin_menu');
+add_action('init', 'video2post_AdminManager::register_session', 1);
